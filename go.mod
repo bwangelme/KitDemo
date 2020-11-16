@@ -1,4 +1,4 @@
-module stringsvc
+module kitdemo
 
 go 1.15
 
