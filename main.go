@@ -1,6 +1,8 @@
 package main
 
 import (
+	"context"
+	"flag"
 	"net/http"
 	"os"
 
@@ -12,7 +14,14 @@ import (
 )
 
 func main() {
+	var (
+		listen = flag.String("listen", ":8080", "HTTP Listen Address")
+		proxy  = flag.String("proxy", "", "可选的用逗号分隔的链接，用于代理 uppercase 请求")
+	)
+	flag.Parse()
+
 	logger := log.NewLogfmtLogger(os.Stderr)
+	logger = log.With(logger, "listen", listen, "caller", log.DefaultCaller)
 
 	fieldKeys := []string{"method", "error"}
 	requestCount := kitprometheus.NewCounterFrom(stdprometheus.CounterOpts{
@@ -36,7 +45,8 @@ func main() {
 
 	var svc StringService
 	svc = stringService{}
-	svc = loggingMiddleware{logger, svc}
+	svc = proxyingMiddleware(context.Background(), *proxy, logger)(svc)
+	svc = loggingMiddleware(logger)(svc)
 	svc = instrumentingMiddleware{requestCount, requestLatency, countResult, svc}
 
 	uppercaseHandler := httptransport.NewServer(
@@ -54,6 +64,6 @@ func main() {
 	http.Handle("/uppercase", uppercaseHandler)
 	http.Handle("/count", countHandler)
 	http.Handle("/metrics", promhttp.Handler())
-	logger.Log("msg", "HTTP", "addr", ":8080")
-	logger.Log("err", http.ListenAndServe(":8080", nil))
+	logger.Log("msg", "HTTP", "addr", *listen)
+	logger.Log("err", http.ListenAndServe(*listen, nil))
 }

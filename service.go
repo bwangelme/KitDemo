@@ -10,7 +10,7 @@ type StringService interface {
 	Count(string) int
 }
 
-var ErrEmpty = errors.New("Empty String")
+var ErrEmpty = errors.New("empty string")
 
 type stringService struct {
 }
@@ -26,3 +26,5 @@ func (stringService) Uppercase(s string) (string, error) {
 func (stringService) Count(s string) int {
 	return len(s)
 }
+
+type ServiceMiddleware func(StringService) StringService
