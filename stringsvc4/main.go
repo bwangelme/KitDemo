@@ -57,6 +57,9 @@ type countResponse struct {
 }
 
 func makeUppercaseHTTPEndpoint(nc *nats.Conn) endpoint.Endpoint {
+	log.WithFields(log.Fields{
+		"name": "makeUppercaseHTTPEndpoint",
+	}).Info()
 	return natstransport.NewPublisher(
 		nc,
 		"stringsvc.uppercase",
@@ -70,7 +73,6 @@ func decodeUppercaseResponse(_ context.Context, msg *nats.Msg) (interface{}, err
 
 	log.WithFields(log.Fields{
 		"name": "decodeUppercaseResponse",
-		"data": string(msg.Data),
 	}).Info()
 	if err := json.Unmarshal(msg.Data, &response); err != nil {
 		return nil, err
@@ -79,6 +81,9 @@ func decodeUppercaseResponse(_ context.Context, msg *nats.Msg) (interface{}, err
 }
 
 func decodeUppercaseHTTPRequest(_ context.Context, req *http.Request) (interface{}, error) {
+	log.WithFields(log.Fields{
+		"name": "decodeUppercaseHTTPRequest",
+	}).Info()
 	var request uppercaseRequest
 	if err := json.NewDecoder(req.Body).Decode(&request); err != nil {
 		return nil, err
@@ -87,6 +92,9 @@ func decodeUppercaseHTTPRequest(_ context.Context, req *http.Request) (interface
 }
 
 func decodeUppercaseRequest(_ context.Context, req *nats.Msg) (interface{}, error) {
+	log.WithFields(log.Fields{
+		"name": "decodeUppercaseRequest",
+	}).Info()
 	var request uppercaseRequest
 	if err := json.Unmarshal(req.Data, &request); err != nil {
 		return nil, err
@@ -95,6 +103,9 @@ func decodeUppercaseRequest(_ context.Context, req *nats.Msg) (interface{}, erro
 }
 
 func makeCountHTTPEndpoint(nc *nats.Conn) endpoint.Endpoint {
+	log.WithFields(log.Fields{
+		"name": "makeCountHTTPEndpoint",
+	}).Info()
 	return natstransport.NewPublisher(
 		nc,
 		"stringsvc.count",
@@ -104,6 +115,9 @@ func makeCountHTTPEndpoint(nc *nats.Conn) endpoint.Endpoint {
 }
 
 func makeUppercaseEndpoint(svc StringService) endpoint.Endpoint {
+	log.WithFields(log.Fields{
+		"name": "makeUppercaseEndpoint",
+	}).Info()
 	return func(_ context.Context, request interface{}) (interface{}, error) {
 		req := request.(uppercaseRequest)
 		v, err := svc.Uppercase(req.S)
@@ -115,6 +129,9 @@ func makeUppercaseEndpoint(svc StringService) endpoint.Endpoint {
 }
 
 func makeCountEndpoint(svc StringService) endpoint.Endpoint {
+	log.WithFields(log.Fields{
+		"name": "makeCountEndpoint",
+	}).Info()
 	return func(_ context.Context, request interface{}) (interface{}, error) {
 		req := request.(countRequest)
 		n := svc.Count(req.S)
@@ -123,6 +140,9 @@ func makeCountEndpoint(svc StringService) endpoint.Endpoint {
 }
 
 func decodeCountResponse(_ context.Context, msg *nats.Msg) (interface{}, error) {
+	log.WithFields(log.Fields{
+		"name": "decodeCountResponse",
+	}).Info()
 	var respone countResponse
 	if err := json.Unmarshal(msg.Data, &respone); err != nil {
 		return nil, err
@@ -132,6 +152,9 @@ func decodeCountResponse(_ context.Context, msg *nats.Msg) (interface{}, error) 
 }
 
 func decodeCountHTTPRequest(_ context.Context, req *http.Request) (interface{}, error) {
+	log.WithFields(log.Fields{
+		"name": "decodeCountHTTPRequest",
+	}).Info()
 	var request countRequest
 	if err := json.NewDecoder(req.Body).Decode(&request); err != nil {
 		return nil, err
@@ -140,6 +163,9 @@ func decodeCountHTTPRequest(_ context.Context, req *http.Request) (interface{}, 
 }
 
 func decodeCountRequest(_ context.Context, req *nats.Msg) (interface{}, error) {
+	log.WithFields(log.Fields{
+		"name": "decodeCountRequest",
+	}).Info()
 	var request countRequest
 	if err := json.Unmarshal(req.Data, &request); err != nil {
 		return nil, err
@@ -170,7 +196,7 @@ func main() {
 		httptransport.EncodeJSONResponse,
 	)
 	countHTTPHandler := httptransport.NewServer(
-		makeUppercaseHTTPEndpoint(nc),
+		makeCountHTTPEndpoint(nc),
 		decodeCountHTTPRequest,
 		httptransport.EncodeJSONResponse,
 	)
@@ -196,7 +222,7 @@ func main() {
 	}
 	defer uSub.Unsubscribe()
 
-	cSub, err := nc.QueueSubscribe("stringsvc.uppercase", "stringsvc", countHandler.ServeMsg(nc))
+	cSub, err := nc.QueueSubscribe("stringsvc.count", "stringsvc", countHandler.ServeMsg(nc))
 	if err != nil {
 		log.WithFields(log.Fields{
 			"err":    err,
@@ -209,7 +235,7 @@ func main() {
 	http.Handle("/count", countHTTPHandler)
 	log.WithFields(log.Fields{
 		"event": "Running Server",
-		"addr": *listen,
+		"addr":  *listen,
 	}).Info()
 	log.Fatal(http.ListenAndServe(*listen, nil))
 }
