@@ -5,6 +5,7 @@ package pb;
 
 service Add {
   rpc Sum(SumRequest) returns (SumReply) {}
+  rpc Concat(ConcatRequest) returns (ConcatReply) {}
 }
 
 message SumRequest {
@@ -14,5 +15,15 @@ message SumRequest {
 
 message SumReply {
   int64 v = 1;
+  string err = 2;
+}
+
+message ConcatRequest {
+  string a = 1;
+  string b = 2;
+}
+
+message ConcatReply {
+  string v = 1;
   string err = 2;
 }
